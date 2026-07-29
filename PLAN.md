@@ -50,15 +50,15 @@ Files I need to understand and use, but do not currently expect to change:
    repository's PostgreSQL 16 service pattern, install the project on Python
    3.11, and pass a `postgresql+asyncpg://` URL because `alembic/env.py` creates
    an async engine.
-3. Run the validation against a disposable, empty PostgreSQL database. Record
-   the successful base-to-head path and deliberately introduce a temporary,
-   controlled model/migration mismatch to verify the job becomes red. Remove
-   that temporary change after the check is proven.
-4. Investigate any mismatch reported by `alembic check`. In particular,
-   migration `001` creates both `uq_users_email` and a unique
-   `ix_users_email`, while the current model declares `unique=True,
-   index=True`. Determine from the live comparison whether this is genuine
-   drift. If it is, correct it with a new revision rather than editing `001`.
+3. Run the validation against a disposable, empty PostgreSQL database. The
+   local reproduction has already shown that revisions `001` and `002` execute
+   successfully and that `alembic check` then fails on a real mismatch. Repeat
+   the same experiment in GitHub Actions to prove the CI wiring is correct.
+4. Correct the confirmed `users.email` drift. Migration `001` creates both
+   `uq_users_email` and a unique `ix_users_email`, while the current model's
+   `unique=True, index=True` describes the unique index. Add a new revision
+   that removes the redundant constraint rather than editing the
+   already-applied `001`, then confirm `alembic check` passes.
 5. Run focused validation and review the CI diff for unrelated changes. Update
    `JOURNAL.md` with results, risks discovered, and links before opening the
    Week 9 pull request.
@@ -79,9 +79,10 @@ check, with Alembic's output explaining the failure.
 
 ## Risks & unknowns
 
-- The current migration history may already differ from the models. A new check
-  can correctly expose an old problem, so I need to distinguish a validation
-  bug from genuine pre-existing drift.
+- The current migration history already differs from the models:
+  `alembic check` detected the extra `uq_users_email` unique constraint after
+  revisions `001` and `002` were applied to fresh PostgreSQL 16. The correction
+  must preserve the existing unique index and must not rewrite revision `001`.
 - `alembic/env.py` uses `create_async_engine`; a plain `postgresql://` URL may
   select an incompatible synchronous driver. CI should use
   `postgresql+asyncpg://`.

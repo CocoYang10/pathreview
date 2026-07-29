@@ -24,22 +24,20 @@ I can identify the relevant CI, Alembic, and SQLAlchemy files and explain the di
 
 **Reproduction summary:**
 I reproduced this as a missing CI safeguard: the repository has an ordered
-Alembic history (`001 -> 002`) and can generate the full PostgreSQL upgrade SQL,
-but `.github/workflows/ci.yml` never runs Alembic. The integration job starts
-PostgreSQL and then runs tests directly, so a green build currently does not
-prove that migrations execute successfully or that their final schema matches
-the SQLAlchemy models.
+Alembic history (`001 -> 002`), but `.github/workflows/ci.yml` never runs it. On
+a fresh local PostgreSQL 16 database, both migrations applied successfully,
+but `alembic check` then detected an extra `uq_users_email` constraint, proving
+that the migrated schema already drifts from the SQLAlchemy models while the
+current CI has no check that reports it.
 
 **PLAN.md link:** https://github.com/CocoYang10/pathreview/blob/feat/129-database-migration-validation/PLAN.md
 
 **Walkthrough video (recommended):** Not recorded.
 
 **Blockers or open questions:**
-My local machine does not currently have Docker or PostgreSQL, so my
-reproduction confirms the missing validation path and generates the migration
-SQL offline, but does not claim a live database result. My first Week 9 step is
-to run `alembic upgrade head` and `alembic check` against the disposable
-PostgreSQL service in GitHub Actions. I also need to determine whether the
-unique constraint and unique index created for `users.email` represent genuine
-pre-existing schema drift before deciding whether a corrective migration is
-in scope.
+The live database reproduction is complete. The remaining implementation
+question is how narrowly to correct the confirmed drift: the new revision must
+remove only the redundant `uq_users_email` constraint while preserving the
+unique `ix_users_email` index that still enforces email uniqueness. The same
+successful-failure sequence must then be reproduced in GitHub Actions to prove
+the new CI job is using the intended async PostgreSQL connection.
