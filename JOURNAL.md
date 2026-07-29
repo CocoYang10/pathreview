@@ -20,7 +20,7 @@ I can identify the relevant CI, Alembic, and SQLAlchemy files and explain the di
 
 ## Week 8 - Reproduction & solution planning
 
-**Reproduction commit link:** https://github.com/CocoYang10/pathreview/commit/9c902bc
+**Reproduction commit link:** https://github.com/CocoYang10/pathreview/commit/a25a659
 
 **Reproduction summary:**
 I reproduced this as a missing CI safeguard: the repository has an ordered
