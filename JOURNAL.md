@@ -17,3 +17,29 @@ I can identify the relevant CI, Alembic, and SQLAlchemy files and explain the di
 **Setup confirmation:** [ ] App runs locally at localhost:5173
 
 **Cohort Ledger:** [x] Issue added to cohort ledger
+
+## Week 8 - Reproduction & solution planning
+
+**Reproduction commit link:** https://github.com/CocoYang10/pathreview/commit/9c902bc
+
+**Reproduction summary:**
+I reproduced this as a missing CI safeguard: the repository has an ordered
+Alembic history (`001 -> 002`) and can generate the full PostgreSQL upgrade SQL,
+but `.github/workflows/ci.yml` never runs Alembic. The integration job starts
+PostgreSQL and then runs tests directly, so a green build currently does not
+prove that migrations execute successfully or that their final schema matches
+the SQLAlchemy models.
+
+**PLAN.md link:** https://github.com/CocoYang10/pathreview/blob/feat/129-database-migration-validation/PLAN.md
+
+**Walkthrough video (recommended):** Not recorded.
+
+**Blockers or open questions:**
+My local machine does not currently have Docker or PostgreSQL, so my
+reproduction confirms the missing validation path and generates the migration
+SQL offline, but does not claim a live database result. My first Week 9 step is
+to run `alembic upgrade head` and `alembic check` against the disposable
+PostgreSQL service in GitHub Actions. I also need to determine whether the
+unique constraint and unique index created for `users.email` represent genuine
+pre-existing schema drift before deciding whether a corrective migration is
+in scope.
