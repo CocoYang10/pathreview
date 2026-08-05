@@ -63,7 +63,7 @@ no new failures rather than claiming to fix unrelated baseline problems.
 
 ### Check-in 2 (end of week)
 
-**PR link:** To be added after the pull request is opened.
+**PR link:** https://github.com/ascherj/pathreview/pull/849
 
 **Branch:** `feat/129-database-migration-validation`
 
