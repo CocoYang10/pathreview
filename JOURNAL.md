@@ -41,3 +41,48 @@ remove only the redundant `uq_users_email` constraint while preserving the
 unique `ix_users_email` index that still enforces email uniqueness. The same
 successful-failure sequence must then be reproduced in GitHub Actions to prove
 the new CI job is using the intended async PostgreSQL connection.
+
+## Week 9 — Solution building & PR submission
+
+### Check-in 1 (mid-week)
+
+**Current progress:** I traced the drift to migration `001`, which creates both
+a unique constraint and a unique index for `users.email`, while the current
+SQLAlchemy metadata expects only the unique index. I added a new corrective
+migration instead of modifying published migration history, and started a
+reusable validation script plus a separate PostgreSQL-backed CI job.
+
+**Next steps:** Add focused tests, recreate a clean PostgreSQL database, run the
+full migration chain and schema comparison, then self-review the final diff.
+
+**Blockers:** The repository's existing test and lint suites are not green, so I
+need to compare before-and-after results and demonstrate that this change adds
+no new failures rather than claiming to fix unrelated baseline problems.
+
+---
+
+### Check-in 2 (end of week)
+
+**PR link:** To be added after the pull request is opened.
+
+**Branch:** `feat/129-database-migration-validation`
+
+**What you built:** I added migration `003` to remove the redundant
+`uq_users_email` constraint without removing the unique index, a fail-fast shell
+script that runs `alembic upgrade head` followed by `alembic check`, and a new
+GitHub Actions job that executes this workflow against fresh PostgreSQL 16.
+
+**Tests added or updated:** I added four unit tests for the complete revision
+chain, the corrective migration's upgrade and downgrade operations, and the
+validation script's missing-`DATABASE_URL` behavior. All four pass. I also ran
+the real workflow against a recreated local database: migrations `001` through
+`003`, rollback and reapplication of `003`, and the final schema comparison all
+passed. The full unit-suite baseline remained unchanged at 52 failures and 31
+errors, with passing tests increasing from 345 to 349.
+
+**Self-review confirmation:** [ ] `make check` passes [ ] `make test-unit`
+passes. Both commands still fail on documented pre-existing repository issues;
+focused Ruff, Black, shell syntax, and the four new tests pass, and no new full
+suite failures were introduced.
+
+**Draft PR feedback received from:** None yet.

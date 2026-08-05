@@ -109,3 +109,23 @@ check, with Alembic's output explaining the failure.
   early and explain the configuration problem.
 - The database is already at head: validation should remain safe and
   repeatable, although CI will normally provide an empty database.
+
+## Implementation results
+
+- Added revision `003`, which removes only the redundant
+  `uq_users_email` constraint. The existing unique `ix_users_email` index still
+  enforces email uniqueness.
+- Added `scripts/validate_migrations.sh` as the single local and CI entry point
+  for `alembic upgrade head` and `alembic check`.
+- Added an isolated `migrations` GitHub Actions job backed by PostgreSQL 16.
+- Added four unit tests covering the revision chain, upgrade and downgrade
+  operations, and the script's missing-configuration failure.
+- Recreated the local validation database from scratch. Revisions `001`, `002`,
+  and `003` applied successfully, and `alembic check` reported
+  `No new upgrade operations detected`. Revision `003` was also downgraded and
+  reapplied successfully.
+- The focused test file passes (`4 passed`). The full unit suite has the same
+  pre-existing failure baseline before and after this work: 52 failures and 31
+  errors; the passing count increased from 345 to 349. Ruff still reports the
+  same 182 pre-existing repository errors, while all changed Python files pass
+  focused Ruff and Black checks.
