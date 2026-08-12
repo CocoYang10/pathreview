@@ -86,3 +86,78 @@ focused Ruff, Black, shell syntax, and the four new tests pass, and no new full
 suite failures were introduced.
 
 **Draft PR feedback received from:** None yet.
+
+## Week 10 — Iteration & reflection
+
+### Reviewer feedback
+
+**Feedback received:** [ ] Yes [x] No — still awaiting review
+
+**Summary of feedback:**
+No review feedback has come in on PR #849. I checked the PR again before
+completing this reflection and found no reviewer comments, submitted reviews,
+or inline review threads.
+
+**How you responded:**
+No response or code change was needed because no feedback was received.
+
+---
+
+### Reflection
+
+**What was harder than you expected?**
+The hardest part was understanding that there are three related but different
+versions of the database structure: the SQLAlchemy models, the Alembic migration
+history, and the schema that actually exists in PostgreSQL. At first, I assumed
+that if `alembic upgrade head` completed successfully, the migrations were
+correct. The surprising part was that revisions `001` and `002` both ran, but
+`alembic check` still found schema drift because `users.email` had both a unique
+constraint and a unique index. I also had to learn how to judge my change in a
+repository whose full test and lint suites already had many failures. Comparing
+the baseline before and after my work was more useful than treating every red
+result as something caused by my PR.
+
+**What did you learn about working in a large codebase?**
+I learned that one issue can cross more modules than its title suggests. This
+issue involved GitHub Actions, a shell script, Alembic configuration and revision
+files, SQLAlchemy models, PostgreSQL, and tests. I could not make a responsible
+change by reading only `.github/workflows/ci.yml`; I had to trace how the
+database URL is loaded, how Alembic imports the model metadata, and how the
+existing migrations build the schema. I also learned why contributors should
+not rewrite an old migration that may already have run in other environments.
+Adding revision `003` preserved the shared history and corrected existing
+databases through the same ordered process.
+
+**How did AI tools help — and where did they fall short?**
+AI tools were most helpful for explaining unfamiliar concepts in smaller steps,
+mapping the relevant files, and turning the issue into a testable plan. They
+also helped me compare CI, Alembic, SQLAlchemy, and PostgreSQL as parts of one
+workflow instead of isolated tools. However, an explanation or suggested patch
+was not evidence that the migration really worked. I still needed to inspect
+the repository, install and run PostgreSQL, reproduce the drift, and test the
+upgrade, check, downgrade, and re-upgrade myself. AI also could not decide that
+the repository's existing failures were harmless without a before-and-after
+baseline. The useful boundary was to use AI for orientation and reasoning, then
+use the actual code and database as the source of truth.
+
+**What would you do differently if you started over?**
+I would run and record the repository's complete test and lint baseline at the
+very beginning. I eventually did this, but doing it before implementation would
+have made the scope clearer and reduced confusion when the full checks failed.
+I would also draw the relationship between models, migrations, and the live
+schema before changing code. That mental model became the key to the issue, and
+having it earlier would have made my reproduction and implementation more
+direct. Finally, I would plan the real PostgreSQL validation from the start
+instead of first thinking about the problem mostly through configuration and
+static code.
+
+**What are you most proud of from this module?**
+I am most proud that I took an area I had almost no experience with—database
+migrations and CI—and followed it through as a complete workflow rather than
+stopping when the script appeared to work. I reproduced a real schema mismatch,
+fixed it without rewriting migration history, added an automatic check for
+future pull requests, and tested the change against a fresh PostgreSQL database.
+The most valuable result for me is not only PR #849; it is that I can now explain
+the connection between application models, migration history, the real
+database, tests, and CI, and I know how to verify each part instead of assuming
+they agree.
